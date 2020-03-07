@@ -2,7 +2,7 @@ CustomIdleAnimation = {
 	name = "CustomIdleAnimation",
 	title = "Custom Idle Animation",
 	author = "Xerrok",
-	version = 1.6,
+	version = "1.6.1",
 	savedVariablesVersion = 1.3
 }
 local CIA = CustomIdleAnimation
@@ -79,6 +79,12 @@ function CIA.OnAddOnLoaded(event, addonName)
 	if addonName == CIA.name then
 		CIA.Initialize()
 		CIA.InitializeLAM()
+		
+		if (CIA.openMenuAfterReload == true) then
+			CIA.openMenuAfterReload = nil
+			CIA.SaveSavedVariables()
+			EVENT_MANAGER:RegisterForEvent("Open"..CIA.name.."Menu", EVENT_PLAYER_ACTIVATED , function() DoCommand("/cia") end)
+		end
 	end
 end
 
@@ -90,7 +96,8 @@ function CIA.LoadSavedVariables()
 		CIA.savedVariables.activeEmoteSet ~= nil or
 		CIA.savedVariables.idleEmotes ~= nil or
 		CIA.savedVariables.idleEmotesWeightings ~= nil or
-		CIA.savedVariables.minEmoteTime ~= nil) then
+		CIA.savedVariables.minEmoteTime ~= nil or
+		CIA.savedVariables.updateDelay ~= nil) then
 		needToSave = true
 		CIA.savedVariables.enabled = CIA.savedVariables.active
 		CIA.savedVariables.activeIdleSetIndex = CIA.savedVariables.activeEmoteSet
@@ -99,6 +106,7 @@ function CIA.LoadSavedVariables()
 			CIA.savedVariables.idleSets = {}
 			for k, v in pairs(CIA.savedVariables.idleEmotes) do
 				CIA.savedVariables.idleSets[k] = IdleSet(k)
+				CIA.savedVariables.idleSets[k].delay = CIA.savedVariables.updateDelay[k]
 				for k2, v2 in pairs(CIA.savedVariables.idleEmotes[k]) do
 					local emoteSlashName = v2
 					if (string.sub(emoteSlashName, 1, 1) ~= "/") then
@@ -173,6 +181,8 @@ function CIA.LoadSavedVariables()
 		needToSave = true
 	end
 	
+	CIA.openMenuAfterReload = CIA.savedVariables.openMenuAfterReload
+	
 	if needToSave then
 		CIA.SaveSavedVariables()
 	end
@@ -182,6 +192,7 @@ function CIA.SaveSavedVariables()
 	CIA.savedVariables.enabled = CIA.enabled
 	CIA.savedVariables.activeIdleSetIndex = CIA.activeIdleSetIndex
 	CIA.savedVariables.idleSets = CIA.idleSets
+	CIA.savedVariables.openMenuAfterReload = CIA.openMenuAfterReload
 end
 
 function CIA.StartActiveIdleSet()
@@ -255,6 +266,11 @@ function CIA.InitializeLAM()
 	}
 	LAM.panel = LAM:RegisterAddonPanel("Custom Idle Animation Settings", panelData)
 	
+	local defaultDelay = 0
+	local defaultMinTime = 5
+	local defaultMaxTime = 20
+	local defaultPriority = 1
+	
 	local optionsData = {
 		[1] =  {
 			type = "checkbox",
@@ -294,6 +310,7 @@ function CIA.InitializeLAM()
 					existingTitleIndex = FindIndex(CIA.idleSetTitles, CIA.idleSets[CIA.activeIdleSetIndex].title)
 					CIA.idleSetTitles[existingTitleIndex] = value
 					CIA.idleSets[CIA.activeIdleSetIndex].title = value
+				CIA.openMenuAfterReload = true
 					CIA.SaveSavedVariables()
 					ReloadUI("ingame")
 				end
@@ -317,6 +334,7 @@ function CIA.InitializeLAM()
 				end
 				table.insert(CIA.idleSets, IdleSet(title))
 				CIA.activeIdleSetIndex = Length(CIA.idleSets)
+				CIA.openMenuAfterReload = true
 				CIA.SaveSavedVariables()
 				ReloadUI("ingame")
 			end,
@@ -332,20 +350,34 @@ function CIA.InitializeLAM()
 				CIA.idleSets[CIA.activeIdleSetIndex]:Stop()
 				table.remove(CIA.idleSets, CIA.activeIdleSetIndex)
 				CIA.activeIdleSetIndex = 1
+				CIA.openMenuAfterReload = true
 				CIA.SaveSavedVariables()
 				ReloadUI("ingame")
 			end,
 			warning = "This will reload the UI!",
 			disabled = function() return not CIA.enabled or Length(CIA.idleSets) <= 1 end,
 			width = "half"
+		},
+		[7] = {
+			type = "slider",
+			name = "Delay",
+			tooltip = "Set the delay in-between emotes in seconds.",
+			default = defaultDelay,
+			min = 0,
+			max = 600,
+			step = 0.1,
+			decimals = 1,
+			getFunc = function() return CIA.idleSets[CIA.activeIdleSetIndex].delay end,
+			setFunc = function(var)
+				CIA.idleSets[CIA.activeIdleSetIndex].delay = var
+				CIA.SaveSavedVariables()
+			end,
+			disabled = function() return not CIA.enabled or Length(CIA.idleSets) <= 1 end,
+			width = "full"
 		}
 	}
 	
 	local counter = Length(optionsData) + 1
-	local defaultMinTime = 5
-	local defaultMaxTime = 20
-	local defaultPriority = 1
-
 	for i=1, Length(CIA.sortedUnlockedEmotes) do
 		local optionData = nil
 		for k, v in pairs(optionsData) do
@@ -385,8 +417,9 @@ function CIA.InitializeLAM()
 				else
 					CIA.idleSets[CIA.activeIdleSetIndex]:Remove(CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].emoteIndex))
 				end
+				CIA.SaveSavedVariables()
 			end,
-			width = "half"
+			width = "full"
 		})
 		table.insert(optionData.controls, {
 			type = "slider",
@@ -399,10 +432,11 @@ function CIA.InitializeLAM()
 			getFunc = function()
 				if (not disabled()) then
 					return CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].emoteIndex).priority
-				end			
+				end	
 			end,
 			setFunc = function(var)
 				CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].emoteIndex).priority = var
+				CIA.SaveSavedVariables()
 			end,
 			width = "half",
 			disabled = disabled
@@ -419,30 +453,11 @@ function CIA.InitializeLAM()
 			getFunc = function()
 				if (not disabled()) then
 					return CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].emoteIndex).minimumTime
-				end			
+				end
 			end,
 			setFunc = function(var)
 				CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].emoteIndex).minimumTime = var
-			end,
-			width = "half",
-			disabled = disabled
-		})
-		table.insert(optionData.controls, {
-			type = "slider",
-			name = "Maximum Time",
-			tooltip = "Set the maximum time in seconds this emote should be played.",
-			default = defaultMaxTime,
-			min = 0.1,
-			max = 600,
-			step = 0.1,
-			decimals = 1,
-			getFunc = function()
-				if (not disabled()) then
-					return CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].emoteIndex).maximumTime
-				end			
-			end,
-			setFunc = function(var)
-				CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].emoteIndex).maximumTime = var
+				CIA.SaveSavedVariables()
 			end,
 			width = "half",
 			disabled = disabled

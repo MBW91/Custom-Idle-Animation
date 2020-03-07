@@ -64,7 +64,7 @@ end
 
 function IsBusy()
 	return not ArePlayerWeaponsSheathed() or
-		IsGameCameraUIModeActive() or
+		(IsGameCameraUIModeActive() and DoesGameHaveFocus()) or
 		IsPlayerMoving() or
 		IsPlayerTryingToMove() or
 		IsInteracting() or

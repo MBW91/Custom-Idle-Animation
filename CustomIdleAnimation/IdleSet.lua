@@ -1,6 +1,7 @@
 IdleSet = class(
 	function (idleSet, title)
 		idleSet.title = title
+		idleSet.delay = 0
 		idleSet.idles = {}
 		idleSet.activeIdleIndex = 0
 	end
@@ -8,9 +9,15 @@ IdleSet = class(
 
 function IdleSet.Copy(savedIdleSet)
 	local self = IdleSet(savedIdleSet.title)
+
+	if (savedIdleSet.delay ~= nil) then
+		self.delay = savedIdleSet.delay
+	end
+
 	for _, idle in pairs(savedIdleSet.idles) do
 		table.insert(self.idles, Idle.Copy(idle))
 	end
+
 	return self
 end
 
@@ -36,37 +43,57 @@ function IdleSet:Get(emoteIndex)
 end
 
 function IdleSet:Start()
-	self:Stop()
-
 	if Length(self.idles) > 0 then
 		self:SetActiveIdle()
+	else
+		self:Stop()
 	end
 end
 
 function IdleSet:Stop()
 	EVENT_MANAGER:UnregisterForUpdate("IdleSetPlayer")
+	EVENT_MANAGER:UnregisterForUpdate("IdleSetDelayIdlePlayer")
 	EVENT_MANAGER:UnregisterForUpdate("IdleSetRandomizer")
+	EVENT_MANAGER:UnregisterForUpdate("IdleSetDelayedUpdateRegister")
 end
 
 function IdleSet:Update()
-	if (not IsBusy()) then
+	if (IsBusy()) then
+		self:SetActiveIdle()
+	else
 		self.idles[self.activeIdleIndex]:Play()
 	end
 end
 
-function IdleSet:SetActiveIdle()
+function IdleSet:SetActiveIdle(ignoreDelay)
 	self:Stop()
-
+	
 	if (IsBusy()) then
-		EVENT_MANAGER:RegisterForUpdate("IdleSetRandomizer", 1000, function() self:SetActiveIdle() end)
-		return;
+		EVENT_MANAGER:RegisterForUpdate("IdleSetRandomizer", 500, function() self:SetActiveIdle(ignoreDelay) end)
+		return
+	end
+	
+	if (ignoreDelay ~= true and self.delay > 0) then
+		EVENT_MANAGER:RegisterForUpdate("IdleSetDelayIdlePlayer", self.delay * 1000, function() self:SetActiveIdle(true) end)
+		return
 	end
 
 	self.activeIdleIndex = self:GetRandomIdleIndex()
-	local playTime = self.idles[self.activeIdleIndex]:GetPlayTime() * 1000
+	local playTime = self.idles[self.activeIdleIndex].minimumTime * 1000
 	self:Update()
-	EVENT_MANAGER:RegisterForUpdate("IdleSetRandomizer", playTime, function() self:SetActiveIdle() end)
-	EVENT_MANAGER:RegisterForUpdate("IdleSetPlayer", 1000, function() self:Update() end)
+	EVENT_MANAGER:RegisterForUpdate("IdleSetRandomizer", playTime, function() self:SetActiveIdle(true) end)
+	local counter = 1
+	EVENT_MANAGER:RegisterForUpdate("IdleSetDelayedUpdateRegister", 100, function()
+		if (IsBusy()) then
+			EVENT_MANAGER:UnregisterForUpdate("IdleSetDelayedUpdateRegister")
+			self:SetActiveIdle()
+		elseif (counter >= 15) then
+			EVENT_MANAGER:RegisterForUpdate("IdleSetPlayer", 500, function() self:Update() end)
+			EVENT_MANAGER:UnregisterForUpdate("IdleSetDelayedUpdateRegister")
+		else
+			counter = counter + 1
+		end
+	end)
 end
 
 function IdleSet:GetRandomIdleIndex()
@@ -77,20 +104,16 @@ function IdleSet:GetRandomIdleIndex()
 	local randMax = 0
 	local idlesCount = Length(self.idles)
 	for i=1, idlesCount do
-		if (i ~= self.activeIdleIndex) then
-			randMax = randMax + self.idles[i].priority
-		end
+		randMax = randMax + self.idles[i].priority
 	end
 
 	local rand = math.random(randMax)
 	local puffer = 0
 	for i=1, idlesCount do
-		if (i ~= self.activeIdleIndex) then
-			puffer = puffer + self.idles[i].priority
-			if rand <= puffer then
-				puffer = i
-				break
-			end
+		puffer = puffer + self.idles[i].priority
+		if rand <= puffer then
+			puffer = i
+			break
 		end
 	end
 	
