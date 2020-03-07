@@ -2,7 +2,7 @@ CustomIdleAnimation = {
 	name = "CustomIdleAnimation",
 	title = "Custom Idle Animation",
 	author = "Xerrok",
-	version = "1.6.1",
+	version = "1.6.1.1",
 	savedVariablesVersion = 1.3
 }
 local CIA = CustomIdleAnimation
@@ -106,7 +106,7 @@ function CIA.LoadSavedVariables()
 			CIA.savedVariables.idleSets = {}
 			for k, v in pairs(CIA.savedVariables.idleEmotes) do
 				CIA.savedVariables.idleSets[k] = IdleSet(k)
-				CIA.savedVariables.idleSets[k].delay = CIA.savedVariables.updateDelay[k]
+				CIA.savedVariables.idleSets[k].delay = CIA.savedVariables.updateDelay[k] * 0.001
 				for k2, v2 in pairs(CIA.savedVariables.idleEmotes[k]) do
 					local emoteSlashName = v2
 					if (string.sub(emoteSlashName, 1, 1) ~= "/") then
@@ -115,7 +115,7 @@ function CIA.LoadSavedVariables()
 
 					for k3, v3 in pairs(CIA.unlockedEmotes) do
 						if (v3.slashName == emoteSlashName) then
-							CIA.savedVariables.idleSets[k]:Add(Idle(v3.emoteIndex, CIA.savedVariables.minEmoteTime[k], CIA.savedVariables.minEmoteTime[k], CIA.savedVariables.idleEmotesWeightings[k][k2]))
+							CIA.savedVariables.idleSets[k]:Add(Idle(v3.emoteIndex, CIA.savedVariables.minEmoteTime[k] * 0.001, CIA.savedVariables.idleEmotesWeightings[k][k2]))
 							break
 						end
 					end
@@ -129,8 +129,8 @@ function CIA.LoadSavedVariables()
 		CIA.savedVariables.idleEmotesWeightings = nil
 		CIA.savedVariables.minEmoteTime = nil
 		CIA.savedVariables.updateDelay = nil
-		
-		zo_callLater(function() d(CIA.title.." was updated to version "..CIA.version..". Please have a look at your Idle Sets and check if everything is set as you like.") end, 1000)
+
+		EVENT_MANAGER:RegisterForEvent(CIA.name.."SavedVariablesUpdate", EVENT_PLAYER_ACTIVATED , function() d(CIA.title.." was updated to version "..CIA.version..". Please have a look at your Idle Sets and check if everything is set as you like.") end)
 	end
 	
 	CIA.enabled = CIA.savedVariables.enabled
