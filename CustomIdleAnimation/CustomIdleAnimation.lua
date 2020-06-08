@@ -2,7 +2,7 @@ CustomIdleAnimation = {
 	name = "CustomIdleAnimation",
 	title = "Custom Idle Animation",
 	author = "Xerrok",
-	version = "1.6.1.1",
+	version = "1.6.2",
 	savedVariablesVersion = 1.3
 }
 local CIA = CustomIdleAnimation
@@ -372,7 +372,7 @@ function CIA.InitializeLAM()
 				CIA.idleSets[CIA.activeIdleSetIndex].delay = var
 				CIA.SaveSavedVariables()
 			end,
-			disabled = function() return not CIA.enabled or Length(CIA.idleSets) <= 1 end,
+			disabled = function() return not CIA.enabled or Length(CIA.idleSets) < 1 end,
 			width = "full"
 		}
 	}
