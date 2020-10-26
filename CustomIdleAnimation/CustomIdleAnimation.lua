@@ -2,11 +2,11 @@ CustomIdleAnimation = {
 	name = "CustomIdleAnimation",
 	title = "Custom Idle Animation",
 	author = "Xerrok",
-	version = "1.6.3",
+	version = "1.6.4",
 	savedVariablesVersion = 1.3
 }
 local CIA = CustomIdleAnimation
-local LAM = LibStub("LibAddonMenu-2.0")
+local LAM = LibAddonMenu2
  
 function CIA.Initialize()
 	CIA.sortedEmoteSlashNames = {}
@@ -28,9 +28,8 @@ function CIA.Initialize()
 		end
 		
 		SLASH_COMMANDS["/"..CIA.sortedEmoteSlashNames[i]] = function()
-			CIA.StopActiveIdleSet()
+			CIA.StopActiveIdleSetTemporarily()
 			PlayEmoteByIndex(i)
-			EVENT_MANAGER:RegisterForUpdate(CIA.name.."Update", 100, CIA.StartIdleSetAfterMove)
 		end
 	end
 
@@ -203,6 +202,11 @@ end
 
 function CIA.StopActiveIdleSet()
 	CIA.idleSets[CIA.activeIdleSetIndex]:Stop()
+end
+
+function CIA.StopActiveIdleSetTemporarily()
+    CIA.StopActiveIdleSet()
+    EVENT_MANAGER:RegisterForUpdate(CIA.name.."Update", 100, CIA.StartIdleSetAfterMove)
 end
 
 function CIA.StartIdleSetAfterMove()
