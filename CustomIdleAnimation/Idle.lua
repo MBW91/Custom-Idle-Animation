@@ -1,15 +1,15 @@
 Idle = class(
-	function (idle, emoteIndex, minimumTime, priority)
-		idle.emoteIndex = emoteIndex
+	function (idle, emoteSlashName, minimumTime, priority)
+		idle.emoteSlashName = emoteSlashName
 		idle.minimumTime = minimumTime
 		idle.priority = priority
 	end
 )
 
 function Idle.Copy(savedIdle)
-	return Idle(savedIdle.emoteIndex, savedIdle.minimumTime, savedIdle.priority)
+	return Idle(savedIdle.emoteSlashName, savedIdle.minimumTime, savedIdle.priority)
 end
 
 function Idle:Play()
-	PlayEmoteByIndex(self.emoteIndex)
+	PlayEmoteByIndex(emoteBySlashNames[self.emoteSlashName].emoteIndex)
 end

@@ -2,8 +2,8 @@ CustomIdleAnimation = {
 	name = "CustomIdleAnimation",
 	title = "Custom Idle Animation",
 	author = "Xerrok",
-	version = "1.6.7",
-	savedVariablesVersion = 1.3
+	version = "1.7",
+	savedVariablesVersion = 2
 }
 local CIA = CustomIdleAnimation
 local LAM = LibAddonMenu2
@@ -11,20 +11,26 @@ local LAM = LibAddonMenu2
 function CIA.Initialize()
 	CIA.sortedEmoteSlashNames = {}
 	CIA.sortedEmoteDisplayNames = {}
+	emoteByEmoteIndices = {}
+	emoteBySlashNames = {}
 	CIA.unlockedEmotes = {}
 	for i=1, GetNumEmotes() do
 		local slashName, category, emoteId, displayName = GetEmoteInfo(i)
 		table.insert(CIA.sortedEmoteSlashNames, string.sub(slashName, 2))
 		table.insert(CIA.sortedEmoteDisplayNames, displayName)
+		
+		local emote = {}
+		emote.emoteIndex = i
+		emote.displayName = displayName
+		emote.slashName = slashName
+		emote.category = category
+		
+		emoteByEmoteIndices[i] = emote
+		emoteBySlashNames[slashName] = emote
 	
 		if (GetEmoteCollectibleId(i) == nil or
 			(GetEmoteCollectibleId(i) ~= nil and IsCollectibleUnlocked(GetEmoteCollectibleId(i)))) then
-			local unlockedEmote = {}
-			unlockedEmote.emoteIndex = i
-			unlockedEmote.displayName = displayName
-			unlockedEmote.slashName = slashName
-			unlockedEmote.category = category
-			table.insert(CIA.unlockedEmotes, unlockedEmote)
+			table.insert(CIA.unlockedEmotes, emote)
 		end
 		
 		SLASH_COMMANDS["/"..CIA.sortedEmoteSlashNames[i]] = function()
@@ -112,12 +118,7 @@ function CIA.LoadSavedVariables()
 						emoteSlashName = "/"..emoteSlashName
 					end
 
-					for k3, v3 in pairs(CIA.unlockedEmotes) do
-						if (v3.slashName == emoteSlashName) then
-							CIA.savedVariables.idleSets[k]:Add(Idle(v3.emoteIndex, CIA.savedVariables.minEmoteTime[k] * 0.001, CIA.savedVariables.idleEmotesWeightings[k][k2]))
-							break
-						end
-					end
+					CIA.savedVariables.idleSets[k]:Add(Idle(emoteSlashName, CIA.savedVariables.minEmoteTime[k] * 0.001, CIA.savedVariables.idleEmotesWeightings[k][k2]))
 				end
 			end
 		end
@@ -157,23 +158,23 @@ function CIA.LoadSavedVariables()
 			[3] = IdleSet("Dancer")
 		}
 		
-		CIA.idleSets[1]:Add(Idle(195, 10, 60, 100))
+		CIA.idleSets[1]:Add(Idle(emoteByEmoteIndices[195].slashName, 10, 60, 100))
 
-		CIA.idleSets[2]:Add(Idle(5, 10, 60, 100))
-		CIA.idleSets[2]:Add(Idle(8, 5, 6, 5))
-		CIA.idleSets[2]:Add(Idle(9, 6.5, 8.5, 5))
+		CIA.idleSets[2]:Add(Idle(emoteByEmoteIndices[5].slashName, 10, 60, 100))
+		CIA.idleSets[2]:Add(Idle(emoteByEmoteIndices[8].slashName, 5, 6, 5))
+		CIA.idleSets[2]:Add(Idle(emoteByEmoteIndices[9].slashName, 6.5, 8.5, 5))
 		
-		CIA.idleSets[3]:Add(Idle(72, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(79, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(181, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(182, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(183, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(184, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(185, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(186, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(187, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(188, 10, 60, 100))
-		CIA.idleSets[3]:Add(Idle(189, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[72].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[79].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[181].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[182].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[183].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[184].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[185].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[186].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[187].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[188].slashName, 10, 60, 100))
+		CIA.idleSets[3]:Add(Idle(emoteByEmoteIndices[189].slashName, 10, 60, 100))
 		
 		CIA.idleSetTitles = { CIA.idleSets[1].title, CIA.idleSets[2].title, CIA.idleSets[3].title }
 		
@@ -417,7 +418,7 @@ function CIA.InitializeLAM()
 			getFunc = function() return CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].emoteIndex) ~= nil end,
 			setFunc = function(value)
 				if (value) then
-					CIA.idleSets[CIA.activeIdleSetIndex]:Add(Idle(CIA.sortedUnlockedEmotes[i].emoteIndex, defaultMinTime, defaultMaxTime, defaultPriority))
+					CIA.idleSets[CIA.activeIdleSetIndex]:Add(Idle(CIA.sortedUnlockedEmotes[i].slashName, defaultMinTime, defaultMaxTime, defaultPriority))
 				else
 					CIA.idleSets[CIA.activeIdleSetIndex]:Remove(CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].emoteIndex))
 				end

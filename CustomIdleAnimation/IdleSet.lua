@@ -14,7 +14,7 @@ function IdleSet.Copy(savedIdleSet)
 		self.delay = savedIdleSet.delay
 	end
 
-	for _, idle in pairs(savedIdleSet.idles) do
+	for _, idle in ipairs(savedIdleSet.idles) do
 		table.insert(self.idles, Idle.Copy(idle))
 	end
 
@@ -35,7 +35,7 @@ function IdleSet:Remove(idle)
 end
 
 function IdleSet:Get(emoteIndex)
-	for _, idle in pairs(self.idles) do
+	for _, idle in ipairs(self.idles) do
 		if (idle.emoteIndex == emoteIndex) then
 			return idle
 		end
