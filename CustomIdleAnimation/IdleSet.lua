@@ -34,9 +34,9 @@ function IdleSet:Remove(idle)
 	end
 end
 
-function IdleSet:Get(emoteIndex)
+function IdleSet:Get(emoteSlashName)
 	for _, idle in ipairs(self.idles) do
-		if (idle.emoteIndex == emoteIndex) then
+		if (idle.emoteSlashName == emoteSlashName) then
 			return idle
 		end
 	end
