@@ -2,7 +2,7 @@ CustomIdleAnimation = {
 	name = "CustomIdleAnimation",
 	title = "Custom Idle Animation",
 	author = "Xerrok",
-	version = "1.7.1",
+	version = "1.7.2",
 	savedVariablesVersion = 2.1
 }
 local CIA = CustomIdleAnimation
