@@ -82,18 +82,21 @@ function IdleSet:SetActiveIdle(ignoreDelay)
 	local playTime = self.idles[self.activeIdleIndex].minimumTime * 1000
 	self:Update()
 	EVENT_MANAGER:RegisterForUpdate("IdleSetRandomizer", playTime, function() self:SetActiveIdle(true) end)
-	local counter = 1
-	EVENT_MANAGER:RegisterForUpdate("IdleSetDelayedUpdateRegister", 100, function()
-		if (IsBusy()) then
-			EVENT_MANAGER:UnregisterForUpdate("IdleSetDelayedUpdateRegister")
-			self:SetActiveIdle()
-		elseif (counter >= 15) then
-			EVENT_MANAGER:RegisterForUpdate("IdleSetPlayer", 500, function() self:Update() end)
-			EVENT_MANAGER:UnregisterForUpdate("IdleSetDelayedUpdateRegister")
-		else
-			counter = counter + 1
-		end
-	end)
+	
+	if (self.idles[self.activeIdleIndex].loop) then
+		local counter = 1
+		EVENT_MANAGER:RegisterForUpdate("IdleSetDelayedUpdateRegister", 100, function()
+			if (IsBusy()) then
+				EVENT_MANAGER:UnregisterForUpdate("IdleSetDelayedUpdateRegister")
+				self:SetActiveIdle()
+			elseif (counter >= 15) then
+				EVENT_MANAGER:RegisterForUpdate("IdleSetPlayer", 500, function() self:Update() end)
+				EVENT_MANAGER:UnregisterForUpdate("IdleSetDelayedUpdateRegister")
+			else
+				counter = counter + 1
+			end
+		end)
+	end
 end
 
 function IdleSet:GetRandomIdleIndex()

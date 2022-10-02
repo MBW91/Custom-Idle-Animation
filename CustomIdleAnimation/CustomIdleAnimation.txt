@@ -1,7 +1,7 @@
 ## Title: Custom Idle Animation
-## Author: Xerrok
-## APIVersion: 101035
-## AddOnVersion: 1.7.2
+## Author: MBW91
+## APIVersion: 101035 101036
+## AddOnVersion: 1.7.3
 ## Description: With this addon you're able to change your characters idle animation.
 ## SavedVariables: CustomIdleAnimationVariables
 ## DependsOn: LibAddonMenu-2.0

@@ -1,8 +1,8 @@
 CustomIdleAnimation = {
 	name = "CustomIdleAnimation",
 	title = "Custom Idle Animation",
-	author = "Xerrok",
-	version = "1.7.2",
+	author = "MBW91",
+	version = "1.7.3",
 	savedVariablesVersion = 2.1
 }
 local CIA = CustomIdleAnimation
@@ -118,7 +118,7 @@ function CIA.LoadSavedVariables()
 						emoteSlashName = "/"..emoteSlashName
 					end
 
-					CIA.savedVariables.idleSets[k]:Add(Idle(emoteSlashName, CIA.savedVariables.minEmoteTime[k] * 0.001, CIA.savedVariables.idleEmotesWeightings[k][k2]))
+					CIA.savedVariables.idleSets[k]:Add(Idle(emoteSlashName, CIA.savedVariables.minEmoteTime[k] * 0.001, CIA.savedVariables.idleEmotesWeightings[k][k2], false))
 				end
 			end
 		end
@@ -158,23 +158,23 @@ function CIA.LoadSavedVariables()
 			[3] = IdleSet("Dancer")
 		}
 		
-		CIA.idleSets[1]:Add(Idle("/juggleflame", 10, 100))
+		CIA.idleSets[1]:Add(Idle("/juggleflame", 10, 100, false))
 
-		CIA.idleSets[2]:Add(Idle("/lute", 10, 100))
-		CIA.idleSets[2]:Add(Idle("/drink", 5, 5))
-		CIA.idleSets[2]:Add(Idle("/eat2", 6.5, 5))
+		CIA.idleSets[2]:Add(Idle("/lute", 10, 100, false))
+		CIA.idleSets[2]:Add(Idle("/drink", 5, 5, false))
+		CIA.idleSets[2]:Add(Idle("/eat2", 6.5, 5, false))
 		
-		CIA.idleSets[3]:Add(Idle("/dance", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/dancedrunk", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/dancealtmer", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/danceargonian", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/dancebosmer", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/dancedunmer", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/danceimperial", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/dancekhajiit", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/dancenord", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/danceorc", 10, 100))
-		CIA.idleSets[3]:Add(Idle("/danceredguard", 10, 100))
+		CIA.idleSets[3]:Add(Idle("/dance", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/dancedrunk", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/dancealtmer", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/danceargonian", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/dancebosmer", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/dancedunmer", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/danceimperial", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/dancekhajiit", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/dancenord", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/danceorc", 10, 100, false))
+		CIA.idleSets[3]:Add(Idle("/danceredguard", 10, 100, false))
 		
 		CIA.idleSetTitles = { CIA.idleSets[1].title, CIA.idleSets[2].title, CIA.idleSets[3].title }
 		
@@ -273,8 +273,8 @@ function CIA.InitializeLAM()
 	
 	local defaultDelay = 0
 	local defaultMinTime = 5
-	local defaultMaxTime = 20
 	local defaultPriority = 1
+	local defaultLoop = false
 	
 	local optionsData = {
 		[1] =  {
@@ -366,7 +366,7 @@ function CIA.InitializeLAM()
 		[7] = {
 			type = "slider",
 			name = "Delay",
-			tooltip = "Set the delay in-between emotes in seconds.",
+			tooltip = "Set the delay, before any emote is played, in seconds.",
 			default = defaultDelay,
 			min = 0,
 			max = 600,
@@ -418,13 +418,30 @@ function CIA.InitializeLAM()
 			getFunc = function() return CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].slashName) ~= nil end,
 			setFunc = function(value)
 				if (value) then
-					CIA.idleSets[CIA.activeIdleSetIndex]:Add(Idle(CIA.sortedUnlockedEmotes[i].slashName, defaultMinTime, defaultMaxTime, defaultPriority))
+					CIA.idleSets[CIA.activeIdleSetIndex]:Add(Idle(CIA.sortedUnlockedEmotes[i].slashName, defaultMinTime, defaultPriority, defaultLoop))
 				else
 					CIA.idleSets[CIA.activeIdleSetIndex]:Remove(CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].slashName))
 				end
 				CIA.SaveSavedVariables()
 			end,
-			width = "full"
+			width = "half"
+		})
+		table.insert(optionData.controls, {
+			type = "checkbox",
+			name = "Loop",
+			tooltip = "Should this emote repeatedly play during its minimum time?",
+			default = defaultLoopEmotes,
+			getFunc = function()
+				if (not disabled()) then
+					return CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].slashName).loop
+				end	
+			end,
+			setFunc = function(var)
+				CIA.idleSets[CIA.activeIdleSetIndex]:Get(CIA.sortedUnlockedEmotes[i].slashName).loop = var
+				CIA.SaveSavedVariables()
+			end,
+			width = "half",
+			disabled = disabled
 		})
 		table.insert(optionData.controls, {
 			type = "slider",
